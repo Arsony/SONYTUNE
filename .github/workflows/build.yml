@@ -1,0 +1,31 @@
+name: Build MetaTune VST3
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:        # lets you press "Run workflow" by hand
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (downloads JUCE 8.0.6)
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item -Recurse "build/MetaTune_artefacts/Release/VST3/MetaTune.vst3" "dist/MetaTune.vst3"
+          Copy-Item ".github/INSTALL.bat" "dist/INSTALL.bat"
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: MetaTune-VST3-Windows
+          path: dist
